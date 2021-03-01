@@ -15,6 +15,7 @@ val databaseModule = module {
     single { provideAppDatabase(androidApplication()) }
 
     single { provideCuriosityImageDao(get()) }
+
 }
 
 private fun provideAppDatabase(application: Application): AppDataBase {

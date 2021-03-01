@@ -10,7 +10,8 @@ import kotlinx.android.parcel.Parcelize
 @Entity(tableName = "images")
 @Parcelize
 data class CuriosityImage (
-    @PrimaryKey val id: String,
-    val url: String
+    @PrimaryKey var id: String,
+    var url: String,
+    var deleted: Int = 0
 ) : Parcelable
 

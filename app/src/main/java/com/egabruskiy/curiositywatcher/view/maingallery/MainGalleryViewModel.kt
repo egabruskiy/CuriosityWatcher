@@ -7,9 +7,13 @@ import com.egabruskiy.curiositywatcher.data.model.CuriosityImageResponse
 import com.egabruskiy.curiositywatcher.data.model.ResourceResult
 import com.egabruskiy.curiositywatcher.repository.CuriosityImageRepository
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class MainGalleryViewModel (private val repository:CuriosityImageRepository): ViewModel() {
 
+    init {
+        updateRepository()
+    }
 
     private val loadTrigger = MutableLiveData(Unit)
 
@@ -19,24 +23,30 @@ class MainGalleryViewModel (private val repository:CuriosityImageRepository): Vi
         networkStatus.value = boolean
     }
 
-    fun refreshImageList() {
+    fun updateImageList() {
+        updateRepository()
         loadTrigger.value = Unit
     }
 
-    val images: LiveData<ResourceResult<MutableList<CuriosityImageResponse>>> = loadTrigger.switchMap {
-        loadData()
+    val offlineImages :LiveData<ResourceResult<MutableList<CuriosityImage>>> = loadTrigger.switchMap {
+        loadOfflineImages()
     }
 
-    private fun loadData(): LiveData<ResourceResult<MutableList<CuriosityImageResponse>>>   {
-       return repository.getLast20Images().asLiveData()
+    private fun loadOfflineImages():LiveData<ResourceResult<MutableList<CuriosityImage>>>{
+        return repository.getOfflineImageList().asLiveData()
     }
 
-    val offlineImages: LiveData<ResourceResult<MutableList<CuriosityImage>>> = repository.getOfflineImageList().asLiveData()
 
-
-    fun saveImagesLocal(list: MutableList<CuriosityImageResponse>){
+    private fun updateRepository(){
         viewModelScope.launch {
-            repository.insertAll(Util.convertResponseImageList(list))
+            repository.updateRepository()
+        }
+    }
+
+
+    fun updateImage(image:CuriosityImage){
+        viewModelScope.launch {
+            repository.updateImage(image)
         }
     }
 

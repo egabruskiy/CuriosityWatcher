@@ -1,5 +1,7 @@
 package com.egabruskiy.curiositywatcher.view.maingallery
 
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +12,7 @@ import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.egabruskiy.curiositywatcher.R
-import com.egabruskiy.curiositywatcher.util.Util
+import com.egabruskiy.curiositywatcher.data.model.CuriosityImage
 import com.egabruskiy.curiositywatcher.data.model.ResourceResult
 import com.egabruskiy.curiositywatcher.databinding.MainGalleryFragmentBinding
 import com.egabruskiy.curiositywatcher.util.ConnectionLiveData
@@ -50,19 +52,21 @@ class MainGalleryFragment : Fragment() {
 
 
         viewModel.networkStatus.observe(viewLifecycleOwner, Observer {
-            if (it) viewModel.refreshImageList()
+            if (it) viewModel.updateImageList()
         })
 
         viewBinding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.refreshImageList()
+            viewModel.updateImageList()
             viewBinding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
-    private fun setImagesObserver() {
 
-        viewModel.images.observe(viewLifecycleOwner) { result ->
-            when (result) {
+
+    private fun setImagesObserver() {
+        viewModel.offlineImages.observe(viewLifecycleOwner) {
+
+            when (it) {
                 is ResourceResult.Loading -> {
                     viewBinding.contentProgressbar.show()
                     viewBinding.emptyTextview.visibility = View.GONE
@@ -70,45 +74,18 @@ class MainGalleryFragment : Fragment() {
                 is ResourceResult.Success -> {
                     viewBinding.contentProgressbar.hide()
                     viewBinding.emptyTextview.visibility = View.GONE
-
-                    mainGalleryAdapter.setList(Util.convertResponseImageList(result.data))
-
-                    viewModel.saveImagesLocal(result.data)
+                    mainGalleryAdapter.setList((it.data))
                 }
+
                 is ResourceResult.Empty -> {
                     viewBinding.contentProgressbar.hide()
                     viewBinding.emptyTextview.visibility = View.VISIBLE
 
                 }
+
                 is ResourceResult.Error -> {
                     viewBinding.contentProgressbar.hide()
-                    viewBinding.emptyTextview.visibility = View.GONE
-
-                    if (result.isNetworkError) viewModel.offlineImages.observe(viewLifecycleOwner) {
-
-                        when (it) {
-                            is ResourceResult.Loading -> {
-                                viewBinding.contentProgressbar.show()
-                                viewBinding.emptyTextview.visibility = View.GONE
-                            }
-                            is ResourceResult.Success -> {
-                                viewBinding.contentProgressbar.hide()
-                                viewBinding.emptyTextview.visibility = View.GONE
-                                mainGalleryAdapter.setList((it.data))
-                            }
-
-                            is ResourceResult.Empty -> {
-                                viewBinding.contentProgressbar.hide()
-                                viewBinding.emptyTextview.visibility = View.VISIBLE
-
-                            }
-
-                            is ResourceResult.Error -> {
-                                viewBinding.contentProgressbar.hide()
-                                viewBinding.emptyTextview.visibility = View.VISIBLE
-                            }
-                        }
-                    }
+                    viewBinding.emptyTextview.visibility = View.VISIBLE
                 }
             }
         }
@@ -123,13 +100,28 @@ class MainGalleryFragment : Fragment() {
 
         }
         mainGalleryAdapter.setClickListener(object :
-            RecyclerViewListener {
-            override fun onClick( position: Int) {
-
-
+                RecyclerViewListener {
+            override fun onClick(position: Int) {
                 val bundle = Bundle()
-                bundle.putInt(POS_ARG,position)
-                findNavController().navigate(R.id.main_gallery_fragment_to_full_screen_fragment,bundle)
+                bundle.putInt(POS_ARG, position)
+                findNavController().navigate(R.id.main_gallery_fragment_to_full_screen_fragment, bundle)
+
+            }
+
+            override fun onLongClick(image: CuriosityImage) {
+                AlertDialog.Builder(activity).apply {
+                    setTitle("Delete Image?")
+                    setPositiveButton("Yes") { _: DialogInterface, _: Int ->
+                        image.deleted = 1
+                        viewModel.updateImage(image)
+//                        viewModel.updateRepository()
+                        viewModel.updateImageList()
+                    }
+                    setCancelable(true)
+                    show()
+
+                }
+
 
             }
         })

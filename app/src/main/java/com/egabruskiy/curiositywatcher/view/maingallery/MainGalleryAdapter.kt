@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -47,9 +48,17 @@ class MainGalleryAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView)
 
+
+            imageView.setOnLongClickListener{
+                listener.onLongClick(image)
+
+                return@setOnLongClickListener true
+
+            }
             imageView.setOnClickListener{
                 listener.onClick(position = adapterPosition)
             }
+
         }
     }
     override fun getItemCount(): Int {
@@ -62,3 +71,4 @@ class MainGalleryAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     }
 
 }
+
